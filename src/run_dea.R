@@ -53,7 +53,6 @@ main <- function() {
     
     # We have liftoff
     dds_res <- DESeq2::DESeq(dds)
-    DESeq2::resultsNames(dds_res)
 }
 
 main()
