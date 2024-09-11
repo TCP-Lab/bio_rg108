@@ -41,7 +41,7 @@ apply_to_results <- function(deseq_object, results, fun, ..., pass_names = FALSE
 plot_enumeration_frame <- function(
     enum_data, order_by = c("frequency", "label"),
     zero_lab = "zero", pos_lab = "positive", neg_lab = "negative",
-    title = NULL
+    title = NULL, top_n = NULL
 ) {
     # Argument pre-parsing
     order_by <- order_by[1]
@@ -59,6 +59,13 @@ plot_enumeration_frame <- function(
     
     # add a static label of the combination of factors
     frequencies$label <- apply( frequencies[, all_factors], 1, paste, collapse="_")
+    
+    # If we just want to show the top N, we dramatically subset here.
+    # Drumroll...
+    if (!is.null(top_n)) {
+        frequencies <- frequencies %>% slice_max(Freq, n = top_n)
+        print(frequencies)
+    }
     
     # Now we need to sort the frame by both "freq" and by the labels
     if (order_by == "frequency") {
@@ -92,7 +99,11 @@ plot_enumeration_frame <- function(
             axis.ticks.length.y = unit(0, "pt")
         )
     
-    melted_legend <- reshape2::melt(frequencies[, c("label", all_factors)], id.vars = "label", measure_vars=all_factors)
+    melted_legend <- reshape2::melt(
+        frequencies[, c("label", all_factors)],
+        id.vars = "label",
+        measure_vars=all_factors
+    )
     
     # Convert from the three labels to a point that we can display
     melted_legend$pos <- ""
@@ -104,12 +115,14 @@ plot_enumeration_frame <- function(
         geom_text(
             aes(label=pos),
             size = 10, colour = "darkblue", fontface="bold",
-            nudge_y=0.12, nudge_x = 0.002
+            vjust=0.5, hjust=0.5,
+            nudge_y=0.05
         ) +
         geom_text(
             aes(label=neg),
             size = 10, colour = "red", fontface="bold",
-            nudge_y=0.12, nudge_x = 0.002
+            vjust=0.5, hjust=0.5,
+            nudge_y=0.05
         ) +
         scale_y_discrete(
             limits=melted_legend$label[frequencies$order],
@@ -185,12 +198,13 @@ denumerate <- function(
 
 denumerate(
     dds_res,
-    order_by = "frequency",
+    order_by = "label",
     title = "My plot title",
     new_labels = list(
         "cell_type_Periodontal_ligament_stem_cells_vs_Dental_pulp_stem_cells" = "cell_type",
         "media_mcdb131_vs_amem" = "media",
         "cell_typePeriodontal_ligament_stem_cells.mediamcdb131" = "interaction"
         
-    )
+    ),
+    top_n = 10
 )
