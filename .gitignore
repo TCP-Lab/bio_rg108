@@ -1,4 +1,5 @@
 data
+*.kerblam.tar
 
 # History files
 .Rhistory

@@ -11,6 +11,7 @@
 
 ALL += ./data/out/done.flag
 ./data/out/done.flag : ./data/bioRG108_CountMatrix_genes_expected_count.tsv
-
+	Rscript --vanilla ./src/run_dea.R
+	touch $@
 
 .ALL = ALL

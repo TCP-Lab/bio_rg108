@@ -19,6 +19,10 @@ load_data <- function(
     data <- raw_data %>% select(-all_of(c("SYMBOL", "GENENAME", "GENETYPE"))) %>%
         column_to_rownames("ENSEMBL")
     
+    # Remove the zero-counts. This has no effect on DESeq (see https://www.bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#Pre-filtering)
+    # but it makes the object smaller and the computation (slightly) faster
+    data <- data[rowSums(data) > 0,]
+    
     sample_metadata <- read_tsv(
         metadata_path,
         skip = 1, comment="#"
@@ -71,8 +75,46 @@ enum <- DeNumerator::denumerate(
     )
 )
 
-DeNumerator::plot_enumeration_frame(
+p <- DeNumerator::plot_enumeration_frame(
     enum,
-    title = "Denumeration of Biorg_108",
-    exclude_all_negative = TRUE
+    title = "Denumeration of Dental pulp cells",
+    exclude_all_negative = TRUE,
+    category_renames = list(
+        "cell_type.ligament" = "Ligament vs Pulp",
+        "media.mcdb131" = "MCDB vs aMEM",
+        "int.media_on_ligament" = "MCDB on Ligament"
+    ),
+    labels_y_nudge = 0.18
 )
+
+save_enum <- function(
+        enum,
+        cell="zero", media="zero", inter="zero",
+        file_path = file.path(
+            "data", "out",
+            paste0("enum_", "cell_", cell, "_media_", media, "_int_", inter, ".txt")
+        )
+) {
+    selection <- row.names(enum)[
+        enum$`cell_type:ligament` == cell & enum$`media:mcdb131` == media &
+            enum$`int:media_on_ligament`== inter
+    ]
+    writeLines(selection, file_path)
+    cat(paste0("Written ", file_path, "\n"))
+}
+
+pdf("./data/out/denumeration_plot.pdf", width = 8, height = 8)
+print(p)
+dev.off()
+
+save_enum(enum, inter = "negative")
+save_enum(enum, inter = "positive")
+
+save_enum(enum, cell = "negative")
+save_enum(enum, cell = "positive")
+
+save_enum(enum, media = "negative")
+save_enum(enum, media = "positive")
+
+save_enum(enum, media = "negative", inter = "positive")
+save_enum(enum, media = "positive", inter = "negative")
