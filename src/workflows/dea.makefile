@@ -10,7 +10,7 @@
 	cp $< $@
 
 ALL += ./data/out/done.flag
-./data/out/done.flag : ./data/bioRG108_CountMatrix_genes_expected_count.tsv
+./data/out/done.flag : ./data/bioRG108_CountMatrix_genes_expected_count.tsv ./data/symbols.csv
 	Rscript --vanilla ./src/run_dea.R
 	touch $@
 

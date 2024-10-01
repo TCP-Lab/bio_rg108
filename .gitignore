@@ -1,4 +1,5 @@
 data
+!data/in/symbols.csv.gz
 *.kerblam.tar
 
 # History files

@@ -44,6 +44,12 @@ load_data <- function(
 }
 
 data <- load_data()
+symbol_data <- read_csv("data/symbols.csv") %>% rename(
+    ensg = "Gene stable ID",
+    description = "Gene description",
+    symbol = "Gene name",
+    gene_type = "Gene type"
+)
 
 # Check the colnames/rownames order since DeSeq2 is dumb
 data$counts <- data$counts[, rownames(data$metadata$sample)]
@@ -77,44 +83,49 @@ enum <- DeNumerator::denumerate(
 
 p <- DeNumerator::plot_enumeration_frame(
     enum,
-    title = "Denumeration of Dental pulp cells",
+    title = "Denumeration of Bio_rg108",
     exclude_all_negative = TRUE,
     category_renames = list(
         "cell_type.ligament" = "Ligament vs Pulp",
         "media.mcdb131" = "MCDB vs aMEM",
-        "int.media_on_ligament" = "MCDB on Ligament"
+        "int.media_on_ligament" = "MCDB + Ligament"
     ),
     labels_y_nudge = 0.18
 )
 
-save_enum <- function(
-        enum,
+make_saver <- function(enum, symbol_data) {
+    function(
         cell="zero", media="zero", inter="zero",
         file_path = file.path(
             "data", "out",
-            paste0("enum_", "cell_", cell, "_media_", media, "_int_", inter, ".txt")
+            paste0("enum_", "cell_", cell, "_media_", media, "_int_", inter, ".csv")
         )
-) {
-    selection <- row.names(enum)[
-        enum$`cell_type:ligament` == cell & enum$`media:mcdb131` == media &
-            enum$`int:media_on_ligament`== inter
-    ]
-    writeLines(selection, file_path)
-    cat(paste0("Written ", file_path, "\n"))
+    ) {
+        selection <- row.names(enum)[
+            enum$`cell_type:ligament` == cell & enum$`media:mcdb131` == media &
+                enum$`int:media_on_ligament`== inter
+        ]
+        frame <- data.frame(ensg = selection) %>% merge(symbol_data, by="ensg", all.x = TRUE, all.y = FALSE)
+        
+        write_csv(frame, file_path)
+        cat(paste0("Written ", file_path, "\n"))
+    }
 }
+
+save_enum <- make_saver(enum, symbol_data)
 
 pdf("./data/out/denumeration_plot.pdf", width = 8, height = 8)
 print(p)
 dev.off()
 
-save_enum(enum, inter = "negative")
-save_enum(enum, inter = "positive")
+save_enum(inter = "negative")
+save_enum(inter = "positive")
 
-save_enum(enum, cell = "negative")
-save_enum(enum, cell = "positive")
+save_enum(cell = "negative")
+save_enum(cell = "positive")
 
-save_enum(enum, media = "negative")
-save_enum(enum, media = "positive")
+save_enum(media = "negative")
+save_enum(media = "positive")
 
-save_enum(enum, media = "negative", inter = "positive")
-save_enum(enum, media = "positive", inter = "negative")
+save_enum(media = "negative", inter = "positive")
+save_enum(media = "positive", inter = "negative")
